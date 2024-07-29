@@ -1,0 +1,29 @@
+{
+  "name": "brimmar/phpresult",
+  "description": "A Rust-like Result Type for PHP",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Brimmar\\PhpResult\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Bryan",
+      "email": "bryan.sergio@brimmar.dev"
+    }
+  ],
+  "minimum-stability": "stable",
+  "require-dev": {
+    "pestphp/pest": "^2.34"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
