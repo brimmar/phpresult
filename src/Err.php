@@ -19,7 +19,8 @@ final class Err implements Result
 {
     public function __construct(
         private readonly mixed $error,
-    ) {}
+    ) {
+    }
 
     public function isOk(): bool
     {
@@ -41,10 +42,10 @@ final class Err implements Result
         return $fn($this->error);
     }
 
-    public function ok(?string $noneClassName = '\Brimmar\PhpOption\None'): mixed
+    public function ok(?string $noneClassName = null): mixed
     {
         try {
-            $none = new $noneClassName;
+            $none = new $noneClassName();
 
             return $none;
         } catch (ReflectionException $e) {
@@ -52,7 +53,7 @@ final class Err implements Result
         }
     }
 
-    public function err(?string $someClassName = '\Brimmar\PhpOption\Some'): mixed
+    public function err(?string $someClassName = null): mixed
     {
         try {
             $some = new $someClassName($this->error);
@@ -83,6 +84,9 @@ final class Err implements Result
         return $this->error;
     }
 
+    /**
+     * @return Result<T, E>
+     */
     public function flatten(): Result
     {
         if ($this->error instanceof Result) {
@@ -137,11 +141,17 @@ final class Err implements Result
         return $default($this->error);
     }
 
+    /**
+     * @return Result<T, E>
+     */
     public function inspect(callable $fn): Result
     {
         return $this;
     }
 
+    /**
+     * @return Result<T, E>
+     */
     public function inspectErr(callable $fn): Result
     {
         $fn($this->error);
@@ -169,7 +179,7 @@ final class Err implements Result
         return $fn($this->error);
     }
 
-    public function transpose(?string $noneClassName = '\Brimmar\PhpOption\None', ?string $someClassName = '\Brimmar\PhpOption\Some'): mixed
+    public function transpose(?string $noneClassName = null, ?string $someClassName = null): mixed
     {
         try {
             $some = new $someClassName($this);

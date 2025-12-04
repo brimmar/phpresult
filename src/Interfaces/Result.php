@@ -13,24 +13,24 @@ use Iterator;
 interface Result
 {
     /**
-     * @phpstan-assert-if-true Ok<T> $this
+     * @phpstan-assert-if-true \Brimmar\PhpResult\Ok<T, E> $this
      */
     public function isOk(): bool;
 
     /**
-     * @phpstan-assert-if-true Ok<T> $this
+     * @phpstan-assert-if-true \Brimmar\PhpResult\Ok<T, E> $this
      *
      * @param  callable(T): bool  $fn
      */
     public function isOkAnd(callable $fn): bool;
 
     /**
-     * @phpstan-assert-if-true Err<E> $this
+     * @phpstan-assert-if-true \Brimmar\PhpResult\Err<T, E> $this
      */
     public function isErr(): bool;
 
     /**
-     * @phpstan-assert-if-true Err<E> $this
+     * @phpstan-assert-if-true \Brimmar\PhpResult\Err<T, E> $this
      *
      * @param  callable(E): bool  $fn
      */
@@ -39,16 +39,16 @@ interface Result
     /**
      * @template U
      *
-     * @param  class-string<U>  $className
-     * @return U|E
+     * @param  class-string<U>|null  $className
+     * @return U|E|\Brimmar\PhpResult\Err<mixed, mixed>
      */
     public function ok(?string $className = null): mixed;
 
     /**
      * @template U
      *
-     * @param  class-string<U>  $className
-     * @return U|E
+     * @param  class-string<U>|null  $className
+     * @return U|E|\Brimmar\PhpResult\Err<mixed, mixed>
      */
     public function err(?string $className = null): mixed;
 
@@ -74,7 +74,7 @@ interface Result
     public function expectErr(string $msg): mixed;
 
     /**
-     * @return Result<U, E>
+     * @return Result<T, E>
      */
     public function flatten(): Result;
 
@@ -150,11 +150,13 @@ interface Result
 
     /**
      * @param  callable(T): void  $fn
+     * @return Result<T, E>
      */
     public function inspect(callable $fn): self;
 
     /**
      * @param  callable(E): void  $fn
+     * @return Result<T, E>
      */
     public function inspectErr(callable $fn): self;
 

@@ -19,7 +19,8 @@ final class Ok implements Result
 {
     public function __construct(
         private readonly mixed $value,
-    ) {}
+    ) {
+    }
 
     public function isOk(): bool
     {
@@ -41,7 +42,7 @@ final class Ok implements Result
         return false;
     }
 
-    public function ok(?string $someClassName = '\Brimmar\PhpOption\Some'): mixed
+    public function ok(?string $someClassName = null): mixed
     {
         try {
             $some = new $someClassName($this->value);
@@ -52,10 +53,10 @@ final class Ok implements Result
         }
     }
 
-    public function err(?string $noneClassName = '\Brimmar\PhpOption\None'): mixed
+    public function err(?string $noneClassName = null): mixed
     {
         try {
-            $none = new $noneClassName;
+            $none = new $noneClassName();
 
             return $none;
         } catch (ReflectionException $e) {
@@ -83,6 +84,9 @@ final class Ok implements Result
         throw new \RuntimeException("$msg: $this->value");
     }
 
+    /**
+     * @return Result<T, E>
+     */
     public function flatten(): Result
     {
         if ($this->value instanceof Result) {
@@ -141,6 +145,9 @@ final class Ok implements Result
         return $fn($this->value);
     }
 
+    /**
+     * @return Result<T, E>
+     */
     public function inspect(callable $fn): Result
     {
         $fn($this->value);
@@ -148,6 +155,9 @@ final class Ok implements Result
         return $this;
     }
 
+    /**
+     * @return Result<T, E>
+     */
     public function inspectErr(callable $fn): Result
     {
         return $this;
@@ -173,17 +183,17 @@ final class Ok implements Result
         return $this;
     }
 
-    public function transpose(?string $noneClassName = '\Brimmar\PhpOption\None', ?string $someClassName = '\Brimmar\PhpOption\Some'): mixed
+    public function transpose(?string $noneClassName = null, ?string $someClassName = null): mixed
     {
-        if ($this->value instanceof $noneClassName) {
+        if ($noneClassName !== null && $this->value instanceof $noneClassName) {
             try {
-                $none = new $noneClassName;
+                $none = new $noneClassName();
 
                 return $none;
             } catch (ReflectionException $e) {
                 return new Err('Could not instantiate class: '.$e);
             }
-        } elseif ($this->value instanceof $someClassName) {
+        } elseif ($someClassName !== null && $this->value instanceof $someClassName) {
             try {
                 $innerValue = $this->unwrap()->unwrap();
 

@@ -5,7 +5,9 @@ use Brimmar\PhpResult\Ok;
 
 class Some
 {
-    public function __construct(private mixed $value) {}
+    public function __construct(private mixed $value)
+    {
+    }
 
     public function unwrap()
     {
@@ -13,7 +15,9 @@ class Some
     }
 }
 
-class None {}
+class None
+{
+}
 
 test('Ok is ok', function () {
     $ok = new Ok(42);
