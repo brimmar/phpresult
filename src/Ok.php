@@ -19,8 +19,7 @@ final class Ok implements Result
 {
     public function __construct(
         private readonly mixed $value,
-    ) {
-    }
+    ) {}
 
     public function isOk(): bool
     {
@@ -56,7 +55,7 @@ final class Ok implements Result
     public function err(?string $noneClassName = null): mixed
     {
         try {
-            $none = new $noneClassName();
+            $none = new $noneClassName;
 
             return $none;
         } catch (ReflectionException $e) {
@@ -187,7 +186,7 @@ final class Ok implements Result
     {
         if ($noneClassName !== null && $this->value instanceof $noneClassName) {
             try {
-                $none = new $noneClassName();
+                $none = new $noneClassName;
 
                 return $none;
             } catch (ReflectionException $e) {

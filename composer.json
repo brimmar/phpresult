@@ -33,7 +33,7 @@
   "require-dev": {
     "pestphp/pest": "^4.0",
     "phpstan/phpstan": "^2.1",
-    "friendsofphp/php-cs-fixer": "^3.64"
+    "laravel/pint": "^1.26"
   },
   "config": {
     "allow-plugins": {
@@ -44,6 +44,6 @@
     "test": "vendor/bin/pest",
     "test:coverage": "vendor/bin/pest --coverage",
     "analyse": "vendor/bin/phpstan analyse",
-    "format": "vendor/bin/php-cs-fixer fix"
+    "format": "vendor/bin/pint"
   }
 }

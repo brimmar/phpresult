@@ -5,9 +5,7 @@ use Brimmar\PhpResult\Ok;
 
 class Some
 {
-    public function __construct(private mixed $value)
-    {
-    }
+    public function __construct(private mixed $value) {}
 
     public function unwrap()
     {
@@ -15,9 +13,7 @@ class Some
     }
 }
 
-class None
-{
-}
+class None {}
 
 test('Ok is ok', function () {
     $ok = new Ok(42);
@@ -367,7 +363,7 @@ test('Ok transpose with Some returns Some of Ok', function () {
 });
 
 test('Ok transpose with None returns None', function () {
-    $ok = new Ok(new None());
+    $ok = new Ok(new None);
     $result = $ok->transpose(None::class, Some::class);
     expect($result)->toBeInstanceOf(None::class);
 });
