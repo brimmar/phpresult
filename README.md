@@ -1,4 +1,9 @@
 # PHP Result Type Documentation
+[![Tests](https://github.com/brimmar/phpresult/actions/workflows/tests.yml/badge.svg)](https://github.com/brimmar/phpresult/actions/workflows/tests.yml)
+[![Static Analysis](https://github.com/brimmar/phpresult/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/brimmar/phpresult/actions/workflows/static-analysis.yml)
+[![License](https://img.shields.io/packagist/l/brimmar/phpresult)](https://packagist.org/packages/brimmar/phpresult)
+[![Latest Stable Version](https://img.shields.io/packagist/v/brimmar/phpresult)](https://packagist.org/packages/brimmar/phpresult)
+[![Total Downloads](https://img.shields.io/packagist/dt/brimmar/phpresult)](https://packagist.org/packages/brimmar/phpresult)
 
 This documentation covers the implementation of a Rust-like Result Type for PHP. The Result type is used for returning and propagating errors. It has two variants: `Ok`, representing success and containing a value, and `Err`, representing error and containing an error value.
 
