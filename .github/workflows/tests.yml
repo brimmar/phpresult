@@ -13,8 +13,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         php-versions: ['8.3', '8.4', '8.5']
+        dependency-version: [prefer-lowest, prefer-stable]
 
     steps:
     - uses: actions/checkout@v4
@@ -26,7 +28,8 @@ jobs:
         coverage: none
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      run: |
+        composer update --${{ matrix.dependency-version }} --prefer-dist --no-progress --no-interaction ${{ matrix.php-versions == '8.5' && '--ignore-platform-req=php+' || '' }}
 
     - name: Run test suite
       run: composer run-script test
