@@ -4,3 +4,10 @@
 /.vagrant
 .phpunit.result.cache
 .php-cs-fixer.cache
+# beads issue tracker files
+.beads/beads.db
+.beads/beads.db-*
+.beads/bd.sock
+.beads/bd.pipe
+.beads/.exclusive-lock
+.git/beads-worktrees/
