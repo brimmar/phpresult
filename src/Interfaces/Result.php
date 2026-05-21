@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Brimmar\PhpResult\Interfaces;
 
+use Brimmar\PhpResult\Err;
+use Brimmar\PhpResult\Ok;
 use Iterator;
 
 /**
@@ -13,24 +15,24 @@ use Iterator;
 interface Result
 {
     /**
-     * @phpstan-assert-if-true \Brimmar\PhpResult\Ok<T, E> $this
+     * @phpstan-assert-if-true Ok<T, E> $this
      */
     public function isOk(): bool;
 
     /**
-     * @phpstan-assert-if-true \Brimmar\PhpResult\Ok<T, E> $this
+     * @phpstan-assert-if-true Ok<T, E> $this
      *
      * @param  callable(T): bool  $fn
      */
     public function isOkAnd(callable $fn): bool;
 
     /**
-     * @phpstan-assert-if-true \Brimmar\PhpResult\Err<T, E> $this
+     * @phpstan-assert-if-true Err<T, E> $this
      */
     public function isErr(): bool;
 
     /**
-     * @phpstan-assert-if-true \Brimmar\PhpResult\Err<T, E> $this
+     * @phpstan-assert-if-true Err<T, E> $this
      *
      * @param  callable(E): bool  $fn
      */
@@ -40,7 +42,7 @@ interface Result
      * @template U
      *
      * @param  class-string<U>|null  $className
-     * @return U|E|\Brimmar\PhpResult\Err<mixed, mixed>
+     * @return U|E|Err<mixed, mixed>
      */
     public function ok(?string $className = null): mixed;
 
@@ -48,7 +50,7 @@ interface Result
      * @template U
      *
      * @param  class-string<U>|null  $className
-     * @return U|E|\Brimmar\PhpResult\Err<mixed, mixed>
+     * @return U|E|Err<mixed, mixed>
      */
     public function err(?string $className = null): mixed;
 
