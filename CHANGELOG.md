@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Option and Result now live in this package. `Brimmar\PhpOption` is included, and `brimmar/phpoption` is archived.
+- `ok()`, `err()`, `transpose()`, `okOr()`, and `okOrElse()` return the real types. The class-name arguments are gone.
+- Requires PHP 8.5. Methods that return an Option or a Result are marked `#[\NoDiscard]`.
+- `Result<T, E>` is the success-or-failure type. There is no Either. That matches Rust and Effect 4, which replaced Either with Result.
+
 ## [1.1.0] - 2025-12-04
 
 ### Changed

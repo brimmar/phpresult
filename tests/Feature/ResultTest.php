@@ -1,19 +1,9 @@
 <?php
 
+use Brimmar\PhpOption\None;
+use Brimmar\PhpOption\Some;
 use Brimmar\PhpResult\Err;
 use Brimmar\PhpResult\Ok;
-
-class Some
-{
-    public function __construct(private mixed $value) {}
-
-    public function unwrap()
-    {
-        return $this->value;
-    }
-}
-
-class None {}
 
 test('Ok is ok', function () {
     $ok = new Ok(42);
@@ -140,26 +130,26 @@ test('Err isErrAnd returns true for matching predicate', function () {
 // ok and err tests
 test('Ok ok returns Some', function () {
     $ok = new Ok(42);
-    $some = $ok->ok(Some::class);
+    $some = $ok->ok();
     expect($some)->toBeInstanceOf(Some::class);
     expect($some->unwrap())->toBe(42);
 });
 
 test('Err ok returns None', function () {
     $err = new Err('error');
-    $none = $err->ok(None::class);
+    $none = $err->ok();
     expect($none)->toBeInstanceOf(None::class);
 });
 
 test('Ok err returns None', function () {
     $ok = new Ok(42);
-    $none = $ok->err(None::class);
+    $none = $ok->err();
     expect($none)->toBeInstanceOf(None::class);
 });
 
 test('Err err returns Some', function () {
     $err = new Err('error');
-    $some = $err->err(Some::class);
+    $some = $err->err();
     expect($some)->toBeInstanceOf(Some::class);
     expect($some->unwrap())->toBe('error');
 });
@@ -355,7 +345,7 @@ test('Err orElse applies function', function () {
 // transpose tests
 test('Ok transpose with Some returns Some of Ok', function () {
     $ok = new Ok(new Some(42));
-    $result = $ok->transpose(None::class, Some::class);
+    $result = $ok->transpose();
     expect($result)->toBeInstanceOf(Some::class);
     $inner = $result->unwrap();
     expect($inner)->toBeInstanceOf(Ok::class);
@@ -364,13 +354,13 @@ test('Ok transpose with Some returns Some of Ok', function () {
 
 test('Ok transpose with None returns None', function () {
     $ok = new Ok(new None);
-    $result = $ok->transpose(None::class, Some::class);
+    $result = $ok->transpose();
     expect($result)->toBeInstanceOf(None::class);
 });
 
 test('Err transpose returns Some of Err', function () {
     $err = new Err('error');
-    $result = $err->transpose(None::class, Some::class);
+    $result = $err->transpose();
     expect($result)->toBeInstanceOf(Some::class);
     $inner = $result->unwrap();
     expect($inner)->toBeInstanceOf(Err::class);

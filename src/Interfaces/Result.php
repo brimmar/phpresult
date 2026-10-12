@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Brimmar\PhpResult\Interfaces;
 
+use Brimmar\PhpOption\Interfaces\Option;
 use Brimmar\PhpResult\Err;
 use Brimmar\PhpResult\Ok;
 use Iterator;
 
 /**
+ * A value that has already succeeded or failed.
+ *
+ * `Ok` holds `T`. `Err` holds `E`. This is Rust's `Result<T, E>` and Effect 4's
+ * `Result<A, E>` (the type that replaced `Either`). It is eager data. A program
+ * that still has requirements, defects, or interruption is an `Effect`, and the
+ * value you get after running one is an `Exit`.
+ *
  * @template T
  * @template E
  */
@@ -39,20 +47,16 @@ interface Result
     public function isErrAnd(callable $fn): bool;
 
     /**
-     * @template U
-     *
-     * @param  class-string<U>|null  $className
-     * @return U|E|Err<mixed, mixed>
+     * @return Option<T>
      */
-    public function ok(?string $className = null): mixed;
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function ok(): Option;
 
     /**
-     * @template U
-     *
-     * @param  class-string<U>|null  $className
-     * @return U|E|Err<mixed, mixed>
+     * @return Option<E>
      */
-    public function err(?string $className = null): mixed;
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function err(): Option;
 
     /**
      * @return T
@@ -78,6 +82,7 @@ interface Result
     /**
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function flatten(): Result;
 
     /**
@@ -123,6 +128,7 @@ interface Result
      * @param  callable(T): U  $fn
      * @return Result<U, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function map(callable $fn): Result;
 
     /**
@@ -131,21 +137,23 @@ interface Result
      * @param  callable(E): F  $fn
      * @return Result<T, F>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function mapErr(callable $fn): Result;
 
     /**
      * @template G
      *
+     * @param  G  $default
      * @param  callable(T): G  $fn
-     * @return G|mixed
+     * @return G
      */
     public function mapOr(mixed $default, callable $fn): mixed;
 
     /**
      * @template H
      *
-     * @param  callable(T): H  $default
-     * @param  callable(E): H  $fn
+     * @param  callable(E): H  $default
+     * @param  callable(T): H  $fn
      * @return H
      */
     public function mapOrElse(callable $default, callable $fn): mixed;
@@ -154,12 +162,14 @@ interface Result
      * @param  callable(T): void  $fn
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function inspect(callable $fn): self;
 
     /**
      * @param  callable(E): void  $fn
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function inspectErr(callable $fn): self;
 
     /**
@@ -168,6 +178,7 @@ interface Result
      * @param  Result<U, E>  $res
      * @return Result<U, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function and(Result $res): Result;
 
     /**
@@ -176,6 +187,7 @@ interface Result
      * @param  callable(T): Result<U, E>  $fn
      * @return Result<U, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function andThen(callable $fn): Result;
 
     /**
@@ -184,6 +196,7 @@ interface Result
      * @param  Result<T, F>  $res
      * @return Result<T, F>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function or(Result $res): Result;
 
     /**
@@ -192,12 +205,19 @@ interface Result
      * @param  callable(E): Result<T, F>  $fn
      * @return Result<T, F>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function orElse(callable $fn): Result;
 
     /**
-     * @throws \ReflectionException
+     * Turns `Result<Option<U>, E>` into `Option<Result<U, E>>`.
+     *
+     * `Ok(Some(v))` becomes `Some(Ok(v))`, `Ok(None)` becomes `None`, and
+     * `Err(e)` becomes `Some(Err(e))`.
+     *
+     * @return Option<Result<mixed, E>>
      */
-    public function transpose(?string $noneClassName = null, ?string $someClassName = null): mixed;
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function transpose(): Option;
 
     /**
      * @template U

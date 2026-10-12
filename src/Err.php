@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Brimmar\PhpResult;
 
 use ArrayIterator;
+use Brimmar\PhpOption\Interfaces\Option;
+use Brimmar\PhpOption\None;
+use Brimmar\PhpOption\Some;
 use Brimmar\PhpResult\Interfaces\Result;
 use Iterator;
-use ReflectionException;
 
 /**
  * @template T
@@ -41,26 +43,24 @@ final class Err implements Result
         return $fn($this->error);
     }
 
-    public function ok(?string $noneClassName = null): mixed
+    /**
+     * @return Option<T>
+     */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function ok(): Option
     {
-        try {
-            $none = new $noneClassName;
-
-            return $none;
-        } catch (ReflectionException $e) {
-            return new Err('Could not instantiate the class: '.$e);
-        }
+        /** @var None<T> */
+        return new None;
     }
 
-    public function err(?string $someClassName = null): mixed
+    /**
+     * @return Option<E>
+     */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function err(): Option
     {
-        try {
-            $some = new $someClassName($this->error);
-
-            return $some;
-        } catch (ReflectionException $e) {
-            return new Err('Could not instantiate the class: '.$e);
-        }
+        /** @var Some<E> */
+        return new Some($this->error);
     }
 
     public function unwrap(): never
@@ -86,6 +86,7 @@ final class Err implements Result
     /**
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function flatten(): Result
     {
         if ($this->error instanceof Result) {
@@ -120,13 +121,16 @@ final class Err implements Result
         return $this->error;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function map(callable $fn): Result
     {
         return $this;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function mapErr(callable $fn): Result
     {
+        /** @var Err<T, mixed> */
         return new Err($fn($this->error));
     }
 
@@ -143,6 +147,7 @@ final class Err implements Result
     /**
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function inspect(callable $fn): Result
     {
         return $this;
@@ -151,6 +156,7 @@ final class Err implements Result
     /**
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function inspectErr(callable $fn): Result
     {
         $fn($this->error);
@@ -158,35 +164,38 @@ final class Err implements Result
         return $this;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function and(Result $res): Result
     {
         return $this;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function andThen(callable $fn): Result
     {
         return $this;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function or(Result $res): Result
     {
         return $res;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function orElse(callable $fn): Result
     {
         return $fn($this->error);
     }
 
-    public function transpose(?string $noneClassName = null, ?string $someClassName = null): mixed
+    /**
+     * @return Option<Result<T, E>>
+     */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function transpose(): Option
     {
-        try {
-            $some = new $someClassName($this);
-
-            return $some;
-        } catch (ReflectionException $e) {
-            return new Err('Could not instantiate class: '.$e);
-        }
+        /** @var Some<Result<T, E>> */
+        return new Some($this);
     }
 
     public function match(callable $Ok, callable $Err): mixed

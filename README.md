@@ -5,7 +5,13 @@
 [![Latest Stable Version](https://img.shields.io/packagist/v/brimmar/phpresult)](https://packagist.org/packages/brimmar/phpresult)
 [![Total Downloads](https://img.shields.io/packagist/dt/brimmar/phpresult)](https://packagist.org/packages/brimmar/phpresult)
 
-This documentation covers the implementation of a Rust-like Result Type for PHP. The Result type is used for returning and propagating errors. It has two variants: `Ok`, representing success and containing a value, and `Err`, representing error and containing an error value.
+This package ships two Rust-like data types for PHP 8.5.
+
+`Option<T>` is absence. `Some` holds a value and `None` holds nothing. A missing value is not a failure.
+
+`Result<T, E>` is success or failure. `Ok` holds `T` and `Err` holds `E`. Rust calls this `Result`. Effect 4 calls it `Result` too, and deleted `Either`. There is no `Either` type here. `Ok` is Effect's `Success`. `Err` is Effect's `Failure`.
+
+Both types are eager values. A lazy program with requirements, defects, and interruption belongs in EPHPect, not in this package.
 
 ## Table of Contents
 
@@ -277,8 +283,7 @@ class UserService
     public function updateUser(int $id, array $data): Result
     {
         return $this->findUser($id)
-            ->ok()
-            ->mapErr(fn() => "User not found")
+            ->okOr('User not found')
             ->andThen(fn($user) => $this->validateUserData($data))
             ->map(fn($validData) => array_merge($this->users[$id], $validData))
             ->inspect(fn($updatedUser) => $this->users[$id] = $updatedUser);
@@ -315,8 +320,7 @@ $service = new UserService();
 // Simulate adding a user
 $service->users[1] = ['name' => 'Alice', 'email' => 'alice@example.com'];
 
-$updateResult = $service->updateUser(1, ['name' => 'Alicia'])
-    ->transpose();
+$updateResult = $service->updateUser(1, ['name' => 'Alicia']);
 
 $name = $updateResult
     ->iter()
@@ -388,35 +392,35 @@ $result = new Ok(42);
 echo $result->isErrAnd(fn($error) => true); // Output: false
 ```
 
-#### `ok(?string $className): mixed`
+#### `ok(): Option`
 
-Converts from `Result<T, E>` to `Option<T>`.
+Converts from `Result<T, E>` to `Option<T>`. `Ok` becomes `Some`. `Err` becomes `None`.
 
 Example:
 
 ```php
 $result = new Ok(42);
-$option = $result->ok('\Brimmar\PhpOption\Some');
+$option = $result->ok();
 echo $option->unwrap(); // Output: 42
 
 $result = new Err("error");
-$option = $result->ok('\Brimmar\PhpOption\None');
+$option = $result->ok();
 echo $option->isNone(); // Output: true
 ```
 
-#### `err(?string $className): mixed`
+#### `err(): Option`
 
-Converts from `Result<T, E>` to `Option<E>`.
+Converts from `Result<T, E>` to `Option<E>`. `Err` becomes `Some`. `Ok` becomes `None`.
 
 Example:
 
 ```php
 $result = new Ok(42);
-$option = $result->err('\Brimmar\PhpOption\None');
+$option = $result->err();
 echo $option->isNone(); // Output: true
 
 $result = new Err("error");
-$option = $result->err('\Brimmar\PhpOption\Some');
+$option = $result->err();
 echo $option->unwrap(); // Output: "error"
 ```
 
@@ -726,23 +730,25 @@ $chained = $result->orElse(fn($error) => new Ok($error . " handled"));
 echo $chained->unwrap(); // Output: "error handled"
 ```
 
-#### `transpose(?string $noneClassName, ?string $someClassName): mixed`
+#### `transpose(): Option`
 
 Transposes a `Result` of an `Option` into an `Option` of a `Result`.
+
+`Ok(Some(v))` becomes `Some(Ok(v))`. `Ok(None)` becomes `None`. `Err(e)` becomes `Some(Err(e))`.
 
 Example:
 
 ```php
 $result = new Ok(new Some(42));
-$transposed = $result->transpose('\Brimmar\PhpOption\None', '\Brimmar\PhpOption\Some');
+$transposed = $result->transpose();
 echo $transposed->unwrap()->unwrap(); // Output: 42
 
 $result = new Ok(new None());
-$transposed = $result->transpose('\Brimmar\PhpOption\None', '\Brimmar\PhpOption\Some');
+$transposed = $result->transpose();
 echo $transposed->isNone(); // Output: true
 
 $result = new Err("error");
-$transposed = $result->transpose('\Brimmar\PhpOption\None', '\Brimmar\PhpOption\Some');
+$transposed = $result->transpose();
 echo $transposed->unwrap()->unwrapErr(); // Output: "error"
 ```
 
@@ -768,11 +774,11 @@ $value = $result->match(
 echo $value; // Output: "Error: error"
 ```
 
-## Complementary Packages
+## Option
 
-This package works well with the PHP Option Type package, which implements the Option Type. Some methods in this package, such as transpose, depend on the Option Type implementation.
+`Option` lives in this package, under `Brimmar\PhpOption`. `brimmar/phpoption` is archived. Install this package once and you get both types.
 
-[PhpOption](https://github.com/brimmar/phpoption/)
+`Option::okOr` and `Option::transpose` return a `Result`. `Result::ok`, `Result::err`, and `Result::transpose` return an `Option`. No class-name strings.
 
 ## Static Analysis
 
