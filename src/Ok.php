@@ -108,10 +108,6 @@ final class Ok implements Result
 
     public function iter(): Iterator
     {
-        if (is_array($this->value)) {
-            return new ArrayIterator($this->value);
-        }
-
         return new ArrayIterator([$this->value]);
     }
 

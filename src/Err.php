@@ -89,10 +89,6 @@ final class Err implements Result
     #[\NoDiscard('ignoring it drops a success or a failure')]
     public function flatten(): Result
     {
-        if ($this->error instanceof Result) {
-            return $this->error;
-        }
-
         return $this;
     }
 

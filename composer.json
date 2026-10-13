@@ -37,7 +37,7 @@
   "minimum-stability": "stable",
   "require-dev": {
     "pestphp/pest": "^4.0",
-    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan": "^2.3",
     "laravel/pint": "^1.26"
   },
   "config": {
