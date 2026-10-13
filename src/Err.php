@@ -102,6 +102,7 @@ final class Err implements Result
         throw new \RuntimeException('Called intoOk on an Err value, should be unreachable');
     }
 
+    /** @return Iterator<int, T> */
     public function iter(): Iterator
     {
         return new ArrayIterator([]);

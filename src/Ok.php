@@ -106,6 +106,7 @@ final class Ok implements Result
         return $this->value;
     }
 
+    /** @return Iterator<int, T> */
     public function iter(): Iterator
     {
         return new ArrayIterator([$this->value]);

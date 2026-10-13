@@ -589,7 +589,7 @@ Returns `true` when the option is `None`.
 
 #### `iter(): Iterator`
 
-Iterates the contained value. `None` yields nothing. An array is one item.
+Iterates the contained value. `None` yields nothing. An array is one item. Walk the elements with `foreach ($option->unwrapOr([]) as $item)`.
 
 ```php
 foreach ((new Some(42))->iter() as $value) {
@@ -926,7 +926,7 @@ Collapses `Result<Result<T, E>, E>` to `Result<T, E>`. `Err` is returned unchang
 
 #### `iter(): Iterator`
 
-Iterates the contained `Ok` value. `Err` yields nothing. An array is one item.
+Iterates the contained `Ok` value. `Err` yields nothing. An array is one item. Walk the elements with `foreach ($result->unwrapOr([]) as $item)`.
 
 ```php
 foreach ((new Ok(42))->iter() as $value) {
@@ -1070,7 +1070,7 @@ Runs `$Ok` for a success and `$Err` for a failure.
 
 ## Static analysis
 
-Two PHPStan extensions are optional, and each one stands on its own. `brimmar/phpstan-rustlike-option-extension` checks Option. `brimmar/phpstan-rustlike-result-extension` checks Result. They need PHPStan 2.3. Add the neon file for the one you install.
+Two PHPStan extensions are optional, and each one stands on its own. `brimmar/phpstan-rustlike-option-extension` checks Option. `brimmar/phpstan-rustlike-result-extension` checks Result. The checks below ship in the 2.0.0 releases of those extensions and need PHPStan 2.3. The 1.0 releases do not include them. Add the neon file for the one you install.
 
 ```bash
 composer require --dev brimmar/phpstan-rustlike-option-extension brimmar/phpstan-rustlike-result-extension

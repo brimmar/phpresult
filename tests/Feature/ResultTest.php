@@ -207,6 +207,7 @@ test('Ok iter returns iterator with value', function () {
     expect($iter)->toBeInstanceOf(Iterator::class);
     expect(iterator_to_array($iter))->toBe([42]);
     expect(iterator_to_array((new Ok([1, 2]))->iter()))->toBe([[1, 2]]);
+    expect(iterator_to_array((new Ok([]))->iter()))->toBe([[]]);
 });
 
 test('Err iter returns empty iterator', function () {
