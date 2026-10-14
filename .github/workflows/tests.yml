@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-versions: ['8.3', '8.4', '8.5']
+        php-versions: ['8.5']
         dependency-version: [prefer-lowest, prefer-stable]
 
     steps:
@@ -29,7 +29,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        composer update --${{ matrix.dependency-version }} --prefer-dist --no-progress --no-interaction ${{ matrix.php-versions == '8.5' && '--ignore-platform-req=php+' || '' }}
+        composer update --${{ matrix.dependency-version }} --prefer-dist --no-progress --no-interaction
 
     - name: Run test suite
       run: composer run-script test
