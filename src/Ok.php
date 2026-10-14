@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Brimmar\PhpResult;
 
 use ArrayIterator;
+use Brimmar\PhpOption\Interfaces\Option;
+use Brimmar\PhpOption\None;
+use Brimmar\PhpOption\Some;
 use Brimmar\PhpResult\Interfaces\Result;
 use Iterator;
-use ReflectionException;
 
 /**
  * @template T
@@ -41,26 +43,24 @@ final class Ok implements Result
         return false;
     }
 
-    public function ok(?string $someClassName = null): mixed
+    /**
+     * @return Option<T>
+     */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function ok(): Option
     {
-        try {
-            $some = new $someClassName($this->value);
-
-            return $some;
-        } catch (ReflectionException $e) {
-            return new Err('Could not instantiate the class: '.$e);
-        }
+        /** @var Some<T> */
+        return new Some($this->value);
     }
 
-    public function err(?string $noneClassName = null): mixed
+    /**
+     * @return Option<E>
+     */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function err(): Option
     {
-        try {
-            $none = new $noneClassName;
-
-            return $none;
-        } catch (ReflectionException $e) {
-            return new Err('Could not instantiate the class: '.$e);
-        }
+        /** @var None<E> */
+        return new None;
     }
 
     public function unwrap(): mixed
@@ -86,6 +86,7 @@ final class Ok implements Result
     /**
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function flatten(): Result
     {
         if ($this->value instanceof Result) {
@@ -105,12 +106,9 @@ final class Ok implements Result
         return $this->value;
     }
 
+    /** @return Iterator<int, T> */
     public function iter(): Iterator
     {
-        if (is_array($this->value)) {
-            return new ArrayIterator($this->value);
-        }
-
         return new ArrayIterator([$this->value]);
     }
 
@@ -124,11 +122,14 @@ final class Ok implements Result
         throw new \RuntimeException('Called unwrapErr on an Ok value');
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function map(callable $fn): Result
     {
+        /** @var Ok<mixed, E> */
         return new Ok($fn($this->value));
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function mapErr(callable $fn): Result
     {
         return $this;
@@ -147,6 +148,7 @@ final class Ok implements Result
     /**
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function inspect(callable $fn): Result
     {
         $fn($this->value);
@@ -157,54 +159,53 @@ final class Ok implements Result
     /**
      * @return Result<T, E>
      */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function inspectErr(callable $fn): Result
     {
         return $this;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function and(Result $res): Result
     {
         return $res;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function andThen(callable $fn): Result
     {
         return $fn($this->value);
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function or(Result $res): Result
     {
         return $this;
     }
 
+    #[\NoDiscard('ignoring it drops a success or a failure')]
     public function orElse(callable $fn): Result
     {
         return $this;
     }
 
-    public function transpose(?string $noneClassName = null, ?string $someClassName = null): mixed
+    /**
+     * @return Option<Result<mixed, E>>
+     */
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public function transpose(): Option
     {
-        if ($noneClassName !== null && $this->value instanceof $noneClassName) {
-            try {
-                $none = new $noneClassName;
-
-                return $none;
-            } catch (ReflectionException $e) {
-                return new Err('Could not instantiate class: '.$e);
-            }
-        } elseif ($someClassName !== null && $this->value instanceof $someClassName) {
-            try {
-                $innerValue = $this->unwrap()->unwrap();
-
-                $some = new $someClassName(new Ok($innerValue));
-
-                return $some;
-            } catch (ReflectionException $e) {
-                return new Err('Could not instantiate class: '.$e);
-            }
+        if ($this->value instanceof None) {
+            /** @var None<Result<mixed, E>> */
+            return new None;
         }
 
-        return $this;
+        if ($this->value instanceof Some) {
+            /** @var Some<Result<mixed, E>> */
+            return new Some(new Ok($this->value->unwrap()));
+        }
+
+        throw new \InvalidArgumentException('transpose() expects Ok to hold an Option');
     }
 
     public function match(callable $Ok, callable $Err): mixed

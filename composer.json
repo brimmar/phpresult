@@ -1,14 +1,18 @@
 {
   "name": "brimmar/phpresult",
-  "description": "A Rust-like Result Type for PHP",
+  "description": "Rust-like Option and Result types for PHP",
   "type": "library",
   "license": "MIT",
   "require": {
-    "php": "^8.3"
+    "php": ">=8.5"
+  },
+  "conflict": {
+    "brimmar/phpoption": "*"
   },
   "autoload": {
     "psr-4": {
-      "Brimmar\\PhpResult\\": "src/"
+      "Brimmar\\PhpResult\\": "src/",
+      "Brimmar\\PhpOption\\": "src/PhpOption/"
     }
   },
   "authors": [
@@ -21,6 +25,7 @@
     "php",
     "result",
     "option",
+    "rust",
     "monad",
     "functional",
     "error-handling"
@@ -31,8 +36,8 @@
   },
   "minimum-stability": "stable",
   "require-dev": {
-    "pestphp/pest": "^4.0",
-    "phpstan/phpstan": "^2.1",
+    "pestphp/pest": "^4.0 || ^5.0",
+    "phpstan/phpstan": "^2.3",
     "laravel/pint": "^1.26"
   },
   "config": {
