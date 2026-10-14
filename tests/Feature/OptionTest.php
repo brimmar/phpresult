@@ -170,6 +170,8 @@ test('okOrElse transforms Some into Ok and None into Err with a provided error f
 
 test('iter returns an iterator with one element for Some and empty for None', function () {
     expect(iterator_to_array(some(42)->iter()))->toBe([42]);
+    expect(iterator_to_array(some([1, 2])->iter()))->toBe([[1, 2]]);
+    expect(iterator_to_array(some([])->iter()))->toBe([[]]);
     expect(iterator_to_array(none()->iter()))->toBe([]);
 });
 

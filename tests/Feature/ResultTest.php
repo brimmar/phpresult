@@ -174,6 +174,11 @@ test('Err flatten returns original Err', function () {
     expect($flattened)->toBe($err);
 });
 
+test('Err flatten keeps a Result stored as the error', function () {
+    $err = new Err(new Ok(1));
+    expect($err->flatten())->toBe($err);
+});
+
 // intoErr and intoOk tests
 test('Ok intoOk returns value', function () {
     $ok = new Ok(42);
@@ -201,6 +206,8 @@ test('Ok iter returns iterator with value', function () {
     $iter = $ok->iter();
     expect($iter)->toBeInstanceOf(Iterator::class);
     expect(iterator_to_array($iter))->toBe([42]);
+    expect(iterator_to_array((new Ok([1, 2]))->iter()))->toBe([[1, 2]]);
+    expect(iterator_to_array((new Ok([]))->iter()))->toBe([[]]);
 });
 
 test('Err iter returns empty iterator', function () {

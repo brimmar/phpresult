@@ -37,12 +37,9 @@ final class Some implements Option
         return false;
     }
 
+    /** @return Iterator<int, T> */
     public function iter(): Iterator
     {
-        if (is_array($this->value)) {
-            return new ArrayIterator($this->value);
-        }
-
         return new ArrayIterator([$this->value]);
     }
 

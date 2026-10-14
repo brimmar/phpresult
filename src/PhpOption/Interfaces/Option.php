@@ -37,6 +37,9 @@ interface Option
      */
     public function isNone(): bool;
 
+    /**
+     * @return Iterator<int, T>
+     */
     public function iter(): Iterator;
 
     /**

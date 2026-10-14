@@ -99,6 +99,9 @@ interface Result
      */
     public function intoOk(): mixed;
 
+    /**
+     * @return Iterator<int, T>
+     */
     public function iter(): Iterator;
 
     /**

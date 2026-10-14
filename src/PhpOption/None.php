@@ -33,6 +33,7 @@ final class None implements Option
         return true;
     }
 
+    /** @return Iterator<int, T> */
     public function iter(): Iterator
     {
         return new ArrayIterator([]);
