@@ -44,7 +44,7 @@ Initial release of PHP Result Type - A Rust-like Result Type for PHP.
 - Documentation and usage examples
 
 [Unreleased]: https://github.com/brimmar/phpresult/compare/v3.0.0...HEAD
-[3.0.0]: https://github.com/brimmar/phpresult/compare/v2.0.0...HEAD
+[3.0.0]: https://github.com/brimmar/phpresult/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/brimmar/phpresult/compare/v1.1.4...v2.0.0
 [1.1.0]: https://github.com/brimmar/phpresult/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/brimmar/phpresult/releases/tag/v1.0.0
