@@ -14,6 +14,8 @@
 
 Both namespaces live in this package. `Brimmar\PhpOption` is Option. `Brimmar\PhpResult` is Result. Install it once. `brimmar/phpoption` is archived, and this package conflicts with it.
 
+PHP code around you returns `null` and throws. `Option::fromNullable()` and `Result::try()` bring those values in. `unwrapOr(null)` and `unwrapOrThrow()` hand them back. See [Null and exceptions](#null-and-exceptions).
+
 Methods that return an Option or a Result are `#[\NoDiscard]`. Ignoring the return value warns, because that drops a present value or a failure. Cast the call to `void` when you mean to ignore it.
 
 ```bash
@@ -25,12 +27,13 @@ composer require brimmar/phpresult
 1. [Option](#option)
 2. [Result](#result)
 3. [Using them together](#using-them-together)
-4. [Option methods](#option-methods)
-5. [Result methods](#result-methods)
-6. [Static analysis](#static-analysis)
-7. [Contributing](#contributing)
-8. [Security vulnerabilities](#security-vulnerabilities)
-9. [License](#license)
+4. [Null and exceptions](#null-and-exceptions)
+5. [Option methods](#option-methods)
+6. [Result methods](#result-methods)
+7. [Static analysis](#static-analysis)
+8. [Contributing](#contributing)
+9. [Security vulnerabilities](#security-vulnerabilities)
+10. [License](#license)
 
 ## Option
 
@@ -39,8 +42,8 @@ composer require brimmar/phpresult
 ```php
 <?php
 
-use Brimmar\PhpOption\Interfaces\Option;
 use Brimmar\PhpOption\None;
+use Brimmar\PhpOption\Option;
 use Brimmar\PhpOption\Some;
 
 class UserProfile
@@ -94,8 +97,8 @@ The same shape replaces optional chaining. Each step returns Option, so a missin
 ```php
 <?php
 
-use Brimmar\PhpOption\Interfaces\Option;
 use Brimmar\PhpOption\None;
+use Brimmar\PhpOption\Option;
 use Brimmar\PhpOption\Some;
 
 class Address
@@ -167,8 +170,8 @@ echo getUserCountry($repo, 'Charlie'); // Country not found
 <?php
 
 use Brimmar\PhpResult\Err;
-use Brimmar\PhpResult\Interfaces\Result;
 use Brimmar\PhpResult\Ok;
+use Brimmar\PhpResult\Result;
 
 class UserRegistration
 {
@@ -244,14 +247,15 @@ echo (new UserRegistration($db, $emailService))
     );
 ```
 
-`orElse` runs only on `Err`. A cache miss is an `Err`, so the client fetches from the API. A rate-limit `Err` stops the chain before that lookup.
+`orElse` runs only on `Err`. A cache miss is an `Err`, so the client fetches from the API. A rate-limit `Err` stops the chain before that lookup. The cache answers with `null` and the HTTP client throws. `Option::fromNullable` and `Result::try` turn both into a `Result`.
 
 ```php
 <?php
 
+use Brimmar\PhpOption\Option;
 use Brimmar\PhpResult\Err;
-use Brimmar\PhpResult\Interfaces\Result;
 use Brimmar\PhpResult\Ok;
+use Brimmar\PhpResult\Result;
 
 class WeatherApiClient
 {
@@ -280,26 +284,18 @@ class WeatherApiClient
 
     private function getCachedForecast(string $city): Result
     {
-        $cachedForecast = $this->cache->get("weather_forecast:$city");
-
-        return $cachedForecast ? new Ok($cachedForecast) : new Err('Cache miss');
+        return Option::fromNullable($this->cache->get("weather_forecast:$city"))->okOr('Cache miss');
     }
 
     private function fetchForecastFromApi(string $city): Result
     {
-        try {
-            $response = $this->httpClient->get('https://api.weather.com/forecast', [
-                'query' => ['city' => $city, 'apikey' => $this->apiKey],
-            ]);
-
-            if ($response->getStatusCode() !== 200) {
-                return new Err('API request failed with status code: '.$response->getStatusCode());
-            }
-
-            return new Ok(json_decode($response->getBody(), true));
-        } catch (Exception $e) {
-            return new Err('Failed to fetch forecast: '.$e->getMessage());
-        }
+        return Result::try(fn () => $this->httpClient->get('https://api.weather.com/forecast', [
+            'query' => ['city' => $city, 'apikey' => $this->apiKey],
+        ]))
+            ->mapErr(fn (Exception $e) => 'Failed to fetch forecast: '.$e->getMessage())
+            ->andThen(fn ($response) => $response->getStatusCode() === 200
+                ? new Ok(json_decode($response->getBody(), true))
+                : new Err('API request failed with status code: '.$response->getStatusCode()));
     }
 
     private function cacheForecast(string $city, array $forecast): Result
@@ -324,8 +320,8 @@ echo (new WeatherApiClient($httpClient, $cache, $rateLimiter, 'your-api-key'))
 <?php
 
 use Brimmar\PhpResult\Err;
-use Brimmar\PhpResult\Interfaces\Result;
 use Brimmar\PhpResult\Ok;
+use Brimmar\PhpResult\Result;
 
 class ConfigManager
 {
@@ -390,12 +386,12 @@ Use Option when the honest answer is "nothing there". Use Result when the caller
 ```php
 <?php
 
-use Brimmar\PhpOption\Interfaces\Option;
 use Brimmar\PhpOption\None;
+use Brimmar\PhpOption\Option;
 use Brimmar\PhpOption\Some;
 use Brimmar\PhpResult\Err;
-use Brimmar\PhpResult\Interfaces\Result;
 use Brimmar\PhpResult\Ok;
+use Brimmar\PhpResult\Result;
 
 class Settings
 {
@@ -488,12 +484,12 @@ A lookup is Option. An update that requires the row is Result. `okOr` is the han
 ```php
 <?php
 
-use Brimmar\PhpOption\Interfaces\Option;
 use Brimmar\PhpOption\None;
+use Brimmar\PhpOption\Option;
 use Brimmar\PhpOption\Some;
 use Brimmar\PhpResult\Err;
-use Brimmar\PhpResult\Interfaces\Result;
 use Brimmar\PhpResult\Ok;
+use Brimmar\PhpResult\Result;
 
 class UserService
 {
@@ -557,7 +553,145 @@ echo $service->findUser(99)
 echo $service->score(1)->unwrapOr(0); // 5
 ```
 
+## Null and exceptions
+
+The PHP code you call returns `null` or throws. Convert on the line that calls it. Convert back on the line that hands a value to code expecting `null` or an exception. Everything between those two lines is Option and Result.
+
+| You have | You want | Call |
+| --- | --- | --- |
+| `?T` | `Option<T>` | `Option::fromNullable($value)` |
+| a call that throws | `Result<T, E>` | `Result::try(fn () => ...)` |
+| `Option<T>` | `Result<T, E>` | `->okOr($error)` |
+| `Result<T, E>` | `Option<T>` | `->ok()` |
+| `Option<T>` or `Result<T, E>` | `?T` | `->unwrapOr(null)` |
+| `Result<T, E>` | `T`, or `E` thrown | `->unwrapOrThrow()` |
+
+### Null
+
+`Option::fromNullable()` turns `null` into `None` and every other value into `Some`. `0`, `''` and `false` are values.
+
+```php
+$user = Option::fromNullable($users->find($id)); // Option<User>
+
+$name = $user->map(fn (User $user) => $user->name)->unwrapOr('guest');
+```
+
+`unwrapOr(null)` goes back to a nullable, for a template or a `??`.
+
+```php
+$email = $user->map(fn (User $user) => $user->email)->unwrapOr(null); // ?string
+```
+
+`okOr()` turns the missing value into a failure that says why. `okOrElse()` builds that error only for `None`.
+
+```php
+$user = Option::fromNullable($users->find($id))->okOr(new UserNotFound($id)); // Result<User, UserNotFound>
+```
+
+### Exceptions
+
+`Result::try()` calls a closure and returns its value in `Ok`. A thrown exception becomes the `Err`.
+
+```php
+$config = Result::try(fn () => json_decode($json, true, flags: JSON_THROW_ON_ERROR), JsonException::class);
+// Result<mixed, JsonException>
+```
+
+List the classes to catch after the closure. Any other exception keeps propagating.
+
+```php
+Result::try(fn () => $client->get($url), ConnectException::class, TimeoutException::class);
+// Result<Response, ConnectException|TimeoutException>
+```
+
+With no class, `try` catches `\Exception`. It lets `\Error` through, because a `TypeError` or a method call on `null` is a bug to fix. Pass `\Throwable::class` to catch those as well.
+
+`mapErr()` turns the exception into your own error.
+
+```php
+$config = Result::try(fn () => json_decode($json, true, flags: JSON_THROW_ON_ERROR), JsonException::class)
+    ->mapErr(fn (JsonException $e) => new InvalidConfig($path, previous: $e));
+```
+
+`unwrapOrThrow()` goes the other way. It returns the `Ok` value. On `Err` it throws the error itself when the error is a `\Throwable`. Use it where the surrounding code expects an exception, such as a controller with an exception handler, or a database transaction that rolls back on a throw.
+
+```php
+$order = $db->transaction(fn () => $this->placeOrder($cart)->unwrapOrThrow());
+```
+
+An error that is not a `\Throwable` is thrown inside a `RuntimeException`, the way `unwrap()` throws it. Map it first to pick the exception.
+
+```php
+$user = $this->findUser($id)
+    ->mapErr(fn (string $reason) => new NotFoundHttpException($reason))
+    ->unwrapOrThrow();
+```
+
+`unwrap()` and `expect()` are for the failure that should never happen. When they throw on an `Err` holding a `\Throwable`, that error is the `previous` exception, so its stack trace reaches your log.
+
+### Several steps in one function
+
+`andThen` chains the steps. Each step fails with its own error type, and the Result collects them.
+
+```php
+/** @return Result<Receipt, InvalidCart|OutOfStock|PaymentDeclined> */
+public function checkout(Cart $cart): Result
+{
+    return $this->validate($cart)
+        ->andThen(fn (Cart $cart) => $this->reserve($cart))
+        ->andThen(fn (Reservation $reservation) => $this->charge($reservation));
+}
+```
+
+A chain gets awkward when the last step needs the values of two earlier ones. `Result::gen()` runs a generator instead. Each step is `yield from $result->step()`. `Ok` hands its value back. The first `Err` stops the generator and becomes the return value, like `?` in Rust. Whatever the generator returns comes back in `Ok`.
+
+```php
+/** @return Result<Order, JsonException|UserNotFound|OutOfStock|PaymentDeclined> */
+public function checkout(string $payload): Result
+{
+    return Result::gen(function () use ($payload) {
+        $data = yield from Result::try(
+            fn () => json_decode($payload, true, flags: JSON_THROW_ON_ERROR),
+            JsonException::class,
+        )->step();
+        $user = yield from Option::fromNullable($this->users->find($data['user_id']))
+            ->okOr(new UserNotFound)
+            ->step();
+        $reservation = yield from $this->reserve($data['items'])->step();
+        $receipt = yield from $this->charge($user, $reservation)->step();
+
+        return new Order($user, $reservation, $receipt);
+    });
+}
+```
+
+The first step throws, the second returns `null`, and the last two return a Result. All four read the same way.
+
+PHPStan and your IDE know every type here with no extension. `$user` is a `User`, and the error type of `checkout` is the union of the four steps.
+
+`$user = yield $result;` runs the same way and is shorter. Its value is `mixed` to an IDE, and to PHPStan unless the [Result extension](#result-extension) is installed.
+
+Without a generator, return the `Err` yourself. `isErr()` narrows the variable to an `Err` that fits any success type.
+
+```php
+$reservation = $this->reserve($items);
+if ($reservation->isErr()) {
+    return $reservation;
+}
+
+$receipt = $this->charge($user, $reservation->unwrap());
+```
+
 ## Option methods
+
+#### `Option::fromNullable(mixed $value): Option`
+
+`null` becomes `None`. Every other value becomes `Some`.
+
+```php
+Option::fromNullable(null)->isNone(); // true
+Option::fromNullable(0)->unwrap(); // 0
+```
 
 #### `isSome(): bool`
 
@@ -810,6 +944,38 @@ Keeps a `Some` whose value passes `$predicate`. A failing predicate, and `None`,
 
 ## Result methods
 
+#### `Result::try(callable $fn, string $catch = Exception::class, string ...$orCatch): Result`
+
+Calls `$fn` and returns its value in `Ok`. An exception of a listed class becomes `Err`. Any other exception is rethrown. With no class it catches `\Exception` and lets `\Error` through.
+
+```php
+Result::try(fn () => intdiv(10, 2))->unwrap(); // 5
+Result::try(fn () => json_decode('{', flags: JSON_THROW_ON_ERROR), JsonException::class)->isErr(); // true
+Result::try(fn () => intdiv(1, 0), DivisionByZeroError::class)->isErr(); // true
+```
+
+#### `Result::gen(callable $fn): Result`
+
+Runs a generator. Each step is a Result, written `yield from $result->step()`. `Ok` hands its value back to the generator. The first `Err` stops the generator and is returned. The generator's return value comes back in `Ok`.
+
+```php
+Result::gen(function () {
+    $a = yield from (new Ok(40))->step();
+    $b = yield from (new Ok(2))->step();
+
+    return $a + $b;
+})->unwrap(); // 42
+
+Result::gen(function () {
+    $a = yield from (new Ok(40))->step();
+    $b = yield from (new Err('no second number'))->step();
+
+    return $a + $b;
+})->unwrapErr(); // no second number
+```
+
+`yield $result` is a step too. Its value has no type without the Result extension.
+
 #### `isOk(): bool`
 
 Returns `true` when the result is `Ok`.
@@ -868,10 +1034,31 @@ Returns `true` when the result is `Err` and the error matches the predicate.
 
 #### `unwrap(): mixed`
 
-Returns the contained `Ok` value. `Err` throws `RuntimeException`.
+Returns the contained `Ok` value. `Err` throws `RuntimeException`. An error that is a `Throwable` is the `previous` exception.
 
 ```php
 (new Ok(42))->unwrap(); // 42
+```
+
+#### `unwrapOrThrow(): mixed`
+
+Returns the contained `Ok` value. `Err` throws the error itself when the error is a `Throwable`. Any other error is thrown inside a `RuntimeException`, the way `unwrap()` throws it.
+
+```php
+(new Ok(42))->unwrapOrThrow(); // 42
+(new Err(new DomainException('no user')))->unwrapOrThrow(); // throws that DomainException
+```
+
+#### `step(): Generator`
+
+One step of `Result::gen()`. `yield from $result->step()` is the contained `Ok` value. An `Err` ends the generator, and `Result::gen()` returns that `Err`. Outside `Result::gen()` it does nothing useful.
+
+```php
+Result::gen(function () {
+    $id = yield from (new Ok(7))->step(); // 7
+
+    return $id * 2;
+})->unwrap(); // 14
 ```
 
 #### `unwrapErr(): mixed`
@@ -884,7 +1071,7 @@ Returns the contained `Err` value. `Ok` throws `RuntimeException`.
 
 #### `expect(string $msg): mixed`
 
-Returns the contained `Ok` value. `Err` throws `RuntimeException` with `$msg`.
+Returns the contained `Ok` value. `Err` throws `RuntimeException` with `$msg`. An error that is a `Throwable` is the `previous` exception.
 
 ```php
 (new Ok(42))->expect('Failed to get value'); // 42
@@ -1070,7 +1257,9 @@ Runs `$Ok` for a success and `$Err` for a failure.
 
 ## Static analysis
 
-Two PHPStan extensions are optional, and each one stands on its own. `brimmar/phpstan-rustlike-option-extension` checks Option. `brimmar/phpstan-rustlike-result-extension` checks Result. The checks below ship in the 2.0.0 releases of those extensions and need PHPStan 2.3. The 1.0 releases do not include them. Add the neon file for the one you install.
+PHPStan reads the generics from this package, with no extension. `Result::try(fn () => ..., JsonException::class)` is a `Result<T, JsonException>`. `andThen` adds the error type of each step. `yield from $result->step()` is the `Ok` type of that Result. `isOk()`, `isErr()`, `isSome()` and `isNone()` narrow both branches. The type parameters are covariant, so a `Result<int, NotFound>` is accepted where `Result<int, NotFound|Invalid>` is declared.
+
+Two PHPStan extensions add the checks below. They are optional, and each one stands on its own. `brimmar/phpstan-rustlike-option-extension` checks Option. `brimmar/phpstan-rustlike-result-extension` checks Result. This version of the package needs their 3.0 releases and PHPStan 2.3. Composer refuses the older ones, because they look for the `Interfaces\Result` and `Interfaces\Option` names and would report nothing. Add the neon file for the one you install.
 
 ```bash
 composer require --dev brimmar/phpstan-rustlike-option-extension brimmar/phpstan-rustlike-result-extension
@@ -1104,7 +1293,7 @@ function label(Option $option): string
 }
 ```
 
-`isSomeAnd()` narrows the true branch only.
+`isSomeAnd()` narrows the true branch only. `isNone()` narrows to `None<never>`, so `return $option;` in that branch fits a function that returns an `Option` of another type.
 
 `match()` accepts `Some` and `None` in either order. A positional call or a different name is `option.matchNamedArgs`. One argument is `option.matchArgs`.
 
@@ -1169,7 +1358,51 @@ function id(Result $result): int
 }
 ```
 
+The narrowed types are `Ok<T, never>` and `Err<never, E>`. An `Err` narrowed this way fits a function that returns a `Result` with another success type, so the early return needs no conversion.
+
+```php
+/**
+ * @param Result<int, string> $id
+ * @return Result<User, string>
+ */
+function load(Result $id): Result
+{
+    if ($id->isErr()) {
+        return $id;
+    }
+
+    return findUser($id->unwrap());
+}
+```
+
 `isOkAnd()` and `isErrAnd()` narrow the true branch only. `unwrapErr()` in the else of `isOkAnd()` is still `result.unsafeMethodCall`.
+
+`unwrapOrThrow()` throws the error itself, so the extension accepts the call while every possible error is a `Throwable`. For any other error type it throws a `RuntimeException` the way `unwrap()` does, and the call is `result.unsafeMethodCall`.
+
+```php
+/** @param Result<User, UserNotFound> $result */
+function user(Result $result): User
+{
+    return $result->unwrapOrThrow();
+}
+
+/** @param Result<User, string> $result */
+function user(Result $result): User
+{
+    return $result->unwrapOrThrow(); // result.unsafeMethodCall
+}
+```
+
+The extension also types the short step. Inside the closure given to `Result::gen()`, a plain `yield $result` has the `Ok` type of that Result. PHPStan reads it as `mixed` without the extension. A `yield` in any other generator keeps its own type.
+
+```php
+Result::gen(function () {
+    $user = yield $this->findUser(1); // User
+    $order = yield $this->lastOrder($user); // Order
+
+    return $order->total;
+});
+```
 
 `map()` and `mapErr()` transform a value. A `throw` inside the callback leaves the Result, and the extension reports it as `result.mapException`. Return an `Err` from `andThen` when the failure belongs in the Result.
 

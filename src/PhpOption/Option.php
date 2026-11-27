@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Brimmar\PhpOption\Interfaces;
+namespace Brimmar\PhpOption;
 
-use Brimmar\PhpOption\None;
-use Brimmar\PhpOption\Some;
-use Brimmar\PhpResult\Interfaces\Result;
+use Brimmar\PhpResult\Result;
 use Iterator;
 
 /**
@@ -16,51 +14,69 @@ use Iterator;
  * split: `Option` for absence, `Result` for success or failure. There is no
  * `Either` type.
  *
- * @template T
+ * @template-covariant T
  */
-interface Option
+abstract class Option
 {
     /**
-     * @phpstan-assert-if-true Some<T> $this
+     * `null` becomes `None`. Every other value becomes `Some`.
+     *
+     * @template U
+     *
+     * @param  U|null  $value
+     * @return Option<U>
      */
-    public function isSome(): bool;
+    #[\NoDiscard('ignoring it drops a success or a failure')]
+    public static function fromNullable(mixed $value): self
+    {
+        return $value === null ? new None : new Some($value);
+    }
+
+    /**
+     * @phpstan-assert-if-true Some<T> $this
+     *
+     * @phpstan-assert-if-false None<never> $this
+     */
+    abstract public function isSome(): bool;
 
     /**
      * @param  callable(T): bool  $fn
      *
      * @phpstan-assert-if-true Some<T> $this
      */
-    public function isSomeAnd(callable $fn): bool;
+    abstract public function isSomeAnd(callable $fn): bool;
 
     /**
-     * @phpstan-assert-if-true None<T> $this
+     * @phpstan-assert-if-true None<never> $this
+     *
+     * @phpstan-assert-if-false Some<T> $this
      */
-    public function isNone(): bool;
+    abstract public function isNone(): bool;
 
     /**
      * @return Iterator<int, T>
      */
-    public function iter(): Iterator;
+    abstract public function iter(): Iterator;
 
     /**
      * @return T
      *
      * @throws \RuntimeException
      */
-    public function unwrap(): mixed;
+    abstract public function unwrap(): mixed;
 
     /**
      * @return T
      *
      * @throws \RuntimeException
      */
-    public function expect(string $msg): mixed;
+    abstract public function expect(string $msg): mixed;
 
     /**
      * @return Option<T>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function flatten(): Option;
+    abstract public function flatten(): self;
 
     /**
      * @template D
@@ -68,7 +84,7 @@ interface Option
      * @param  D  $default
      * @return T|D
      */
-    public function unwrapOr(mixed $default): mixed;
+    abstract public function unwrapOr(mixed $default): mixed;
 
     /**
      * @template D
@@ -76,7 +92,7 @@ interface Option
      * @param  callable(): D  $default
      * @return T|D
      */
-    public function unwrapOrElse(callable $default): mixed;
+    abstract public function unwrapOrElse(callable $default): mixed;
 
     /**
      * @template U
@@ -85,7 +101,7 @@ interface Option
      * @return Option<U>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function map(callable $fn): Option;
+    abstract public function map(callable $fn): self;
 
     /**
      * @template U
@@ -94,7 +110,7 @@ interface Option
      * @param  callable(T): U  $fn
      * @return U
      */
-    public function mapOr(mixed $default, callable $fn): mixed;
+    abstract public function mapOr(mixed $default, callable $fn): mixed;
 
     /**
      * @template U
@@ -103,14 +119,14 @@ interface Option
      * @param  callable(T): U  $fn
      * @return U
      */
-    public function mapOrElse(callable $default, callable $fn): mixed;
+    abstract public function mapOrElse(callable $default, callable $fn): mixed;
 
     /**
      * @param  callable(T): void  $fn
      * @return Option<T>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function inspect(callable $fn): self;
+    abstract public function inspect(callable $fn): self;
 
     /**
      * @template E
@@ -119,7 +135,7 @@ interface Option
      * @return Result<T, E>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function okOr(mixed $error): Result;
+    abstract public function okOr(mixed $error): Result;
 
     /**
      * @template E
@@ -128,7 +144,7 @@ interface Option
      * @return Result<T, E>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function okOrElse(callable $error): Result;
+    abstract public function okOrElse(callable $error): Result;
 
     /**
      * @template U
@@ -137,7 +153,7 @@ interface Option
      * @return Option<U>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function and(Option $opt): Option;
+    abstract public function and(self $opt): self;
 
     /**
      * @template U
@@ -146,21 +162,25 @@ interface Option
      * @return Option<U>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function andThen(callable $fn): Option;
+    abstract public function andThen(callable $fn): self;
 
     /**
-     * @param  Option<T>  $opt
-     * @return Option<T>
+     * @template U
+     *
+     * @param  Option<U>  $opt
+     * @return Option<T|U>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function or(Option $opt): Option;
+    abstract public function or(self $opt): self;
 
     /**
-     * @param  callable(): Option<T>  $fn
-     * @return Option<T>
+     * @template U
+     *
+     * @param  callable(): Option<U>  $fn
+     * @return Option<T|U>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function orElse(callable $fn): Option;
+    abstract public function orElse(callable $fn): self;
 
     /**
      * Turns `Option<Result<U, E>>` into `Result<Option<U>, E>`.
@@ -171,14 +191,16 @@ interface Option
      * @return Result<Option<mixed>, mixed>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function transpose(): Result;
+    abstract public function transpose(): Result;
 
     /**
-     * @param  Option<T>  $opt
-     * @return Option<T>
+     * @template U
+     *
+     * @param  Option<U>  $opt
+     * @return Option<T|U>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function xor(Option $opt): Option;
+    abstract public function xor(self $opt): self;
 
     /**
      * @template U
@@ -187,7 +209,7 @@ interface Option
      * @return Option<array{T, U}>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function zip(Option $other): Option;
+    abstract public function zip(self $other): self;
 
     /**
      * @template U
@@ -198,13 +220,13 @@ interface Option
      * @return Option<R>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function zipWith(Option $other, callable $fn): Option;
+    abstract public function zipWith(self $other, callable $fn): self;
 
     /**
      * @return array{Option<mixed>, Option<mixed>}
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function unzip(): array;
+    abstract public function unzip(): array;
 
     /**
      * @template U
@@ -213,12 +235,12 @@ interface Option
      * @param  callable(): U  $None
      * @return U
      */
-    public function match(callable $Some, callable $None): mixed;
+    abstract public function match(callable $Some, callable $None): mixed;
 
     /**
      * @param  callable(T): bool  $predicate
      * @return Option<T>
      */
     #[\NoDiscard('ignoring it drops a success or a failure')]
-    public function filter(callable $predicate): Option;
+    abstract public function filter(callable $predicate): self;
 }

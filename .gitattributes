@@ -4,6 +4,7 @@
 /.gitignore export-ignore
 /phpunit.xml export-ignore
 /phpstan.neon export-ignore
+/pint.json export-ignore
 /CONTRIBUTING.md export-ignore
 
 # Use bd merge for beads JSONL files

@@ -7,7 +7,9 @@
     "php": ">=8.5"
   },
   "conflict": {
-    "brimmar/phpoption": "*"
+    "brimmar/phpoption": "*",
+    "brimmar/phpstan-rustlike-option-extension": "<3.0",
+    "brimmar/phpstan-rustlike-result-extension": "<3.0"
   },
   "autoload": {
     "psr-4": {
@@ -38,7 +40,9 @@
   "require-dev": {
     "pestphp/pest": "^4.0 || ^5.0",
     "phpstan/phpstan": "^2.3",
-    "laravel/pint": "^1.26"
+    "laravel/pint": "^1.26",
+    "phpstan/phpstan-strict-rules": "^2.1",
+    "phpstan/phpstan-deprecation-rules": "^2.0"
   },
   "config": {
     "allow-plugins": {
@@ -49,6 +53,12 @@
     "test": "vendor/bin/pest",
     "test:coverage": "vendor/bin/pest --coverage",
     "analyse": "vendor/bin/phpstan analyse",
-    "format": "vendor/bin/pint"
+    "format": "vendor/bin/pint",
+    "format:check": "vendor/bin/pint --test",
+    "check": [
+      "@format:check",
+      "@analyse",
+      "@test"
+    ]
   }
 }
